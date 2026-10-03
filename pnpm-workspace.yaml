@@ -1,0 +1,35 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+catalog:
+  typescript: "^5"
+  zod: "^3"
+  drizzle-orm: "^0.44"
+  drizzle-kit: "^0.30"
+  pg: "^8"
+  "@types/pg": "^8"
+
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - "@swc/core"
+  - "unrs-resolver"
+  - "argon2"
+  - "sharp"
+  - "@img/sharp-win32-x64"
+  - "esbuild"
+  - "cpu-features"
+  - "protobufjs"
+  - "ssh2"
+
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
+  "unrs-resolver": true
+  "argon2": true
+  "sharp": true
+  "@img/sharp-win32-x64": true
+  "esbuild": true
+  "cpu-features": true
+  "protobufjs": true
+  "ssh2": true

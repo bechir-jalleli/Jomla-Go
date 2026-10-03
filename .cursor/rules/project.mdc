@@ -1,0 +1,22 @@
+---
+description: Always apply these rules before starting any task in this repository
+alwaysApply: true
+---
+
+# Cursor Agent Rules
+
+Before starting **any** task in this project:
+
+1. **Read `AGENTS.md`** at the repo root — it contains the 10 non-negotiable project rules.
+2. **Read `docs/PROGRESS.md`** — it shows what is done, what is in progress, and what open decisions are pending.
+3. **Read `docs/TECHNICAL_BLUEPRINT.md`** for the relevant section before making architectural decisions.
+
+## Quick Reminders
+
+- All DB access → `TenantDb` only (never raw pool)
+- `tenant_id` → from Host header server-side only, never from client
+- Every route → explicit security decorator (`@Public` / `@Customer` / `@Staff` / `@PlatformOnly`)
+- Every tenant table → `tenant_id` + composite FK + RLS enabled
+- Money → integer millimes (`bigint`), never floats
+- No new dependencies without asking
+- Show plan before editing, one task per session

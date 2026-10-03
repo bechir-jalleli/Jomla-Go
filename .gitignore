@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# NestJS / Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+# Keep the example
+!.env.example
+
+# Coverage
+coverage/
+*.lcov
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+infra/volumes/
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Misc
+*.tsbuildinfo
