@@ -8,7 +8,7 @@ alwaysApply: true
 Before starting **any** task in this project:
 
 1. **Read `AGENTS.md`** at the repo root — it contains the 10 non-negotiable project rules.
-2. **Read `docs/PROGRESS.md`** — it shows what is done, what is in progress, and what open decisions are pending.
+2. **Read `progress/README.md` and the active sprint file** before starting; update them at the end.
 3. **Read `docs/TECHNICAL_BLUEPRINT.md`** for the relevant section before making architectural decisions.
 
 ## Quick Reminders

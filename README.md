@@ -89,5 +89,5 @@ docker compose -f infra/docker-compose.dev.yml down
 ## Important: Read Before Coding
 
 - **`AGENTS.md`** — 10 non-negotiable rules (for humans and AI agents)
-- **`docs/PROGRESS.md`** — current status and open decisions
+- **`progress/README.md`** — current status and open decisions
 - **`docs/TECHNICAL_BLUEPRINT.md`** — full architecture reference
