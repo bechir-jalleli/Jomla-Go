@@ -17,3 +17,8 @@ The following will be created in Phase 1:
 - No SQL files yet. Do NOT create schema or seed data here during Phase 0.
 - In production, the Managed PostgreSQL on DigitalOcean does not grant SUPERUSER or BYPASSRLS — RLS policies must be explicit for `app_platform`.
 - Never use `app_owner` in the running application.
+
+
+
+
+docker compose -f infra/docker-compose.dev.yml up -d

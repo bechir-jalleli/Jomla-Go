@@ -2,13 +2,14 @@
 
 ## 1. Current status
 - **Active sprint:** [Sprint 00: Foundations](sprint-00-foundations.md)
-- **Current focus:** Verify Phase 0 for real (install, lint, typecheck, test, build, Postgres health, GitHub remote, CI green).
-- **Next step:** Close Phase 0 (all verification items green).
+- **Current focus:** Setup tenancy and DB core in Sprint 01.
+- **Next step:** Run migrations and verify DB roles.
 
 ## 2. Sprint index
 | Sprint | Goal | Dates | Status | Tasks done / total | Link |
 |---|---|---|---|---|---|
 | Sprint 00 | Foundations | TBD | Active | 0/0 | [sprint-00-foundations.md](sprint-00-foundations.md) |
+| Sprint 01 | Tenancy + DB core | TBD | Planned | 0/2 | [sprint-01-tenancy.md](sprint-01-tenancy.md) |
 
 ## 3. Planned phases
 0. Foundations
