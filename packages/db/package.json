@@ -10,17 +10,20 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "db:generate": "node --env-file=../../.env node_modules/drizzle-kit/bin.cjs generate --custom",
+    "db:generate": "node --env-file=../../.env node_modules/drizzle-kit/bin.cjs generate",
+    "db:generate:custom": "node --env-file=../../.env node_modules/drizzle-kit/bin.cjs generate --custom",
     "db:migrate": "node --env-file=../../.env node_modules/drizzle-kit/bin.cjs migrate",
-    "db:reset": "node --env-file=../../.env scripts/db-reset.js"
+    "db:reset": "node --env-file=../../.env scripts/db-reset.js",
+    "test": "node --env-file=../../.env node_modules/vitest/vitest.mjs run"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
     "pg": "catalog:"
   },
   "devDependencies": {
-    "drizzle-kit": "catalog:",
     "@types/pg": "catalog:",
-    "typescript": "catalog:"
+    "drizzle-kit": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^4"
   }
 }

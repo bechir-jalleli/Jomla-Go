@@ -8,9 +8,24 @@ on:
 
 jobs:
   ci:
-    name: Lint · Typecheck · Test · Build
+    name: Lint · Typecheck · Test · Build · Migrations
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_test_password
+          POSTGRES_DB: jomla_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -36,7 +51,30 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test
+      - name: Setup CI database roles and privileges
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: ci_test_password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: jomla_ci
+          POSTGRES_OWNER_PASSWORD: ci_owner_password
+          POSTGRES_RUNTIME_PASSWORD: ci_runtime_password
+          POSTGRES_PLATFORM_PASSWORD: ci_platform_password
+        run: |
+          bash infra/postgres/init/01-roles.sh
+
+      - name: Setup CI environment variables
+        run: |
+          echo "DATABASE_MIGRATOR_URL=postgresql://app_owner:ci_owner_password@localhost:5432/jomla_ci" >> .env
+          echo "DATABASE_URL=postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci" >> .env
+          echo "DATABASE_TEST_URL=postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci" >> .env
+
+      - name: Run database migrations (as app_owner)
+        run: pnpm db:migrate
+
+      - name: Run unit & integration tests
         run: pnpm test
 
       - name: Build

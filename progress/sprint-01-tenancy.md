@@ -136,6 +136,21 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
 **pnpm build:** Next.js compiled successfully in 17.7s; nest build PASS
 **pnpm test:** 1 KNOWN FAILURE — AppController (pre-existing NestJS DI issue, not caused by this task)
 
+### Session 2 — 2026-10-11
+
+1. **RLS Verification Suite (`rls-probe.spec.ts`)**:
+   - 7 test cases covering isolation, zero rows without tenant context, WITH CHECK (42501), transaction boundary isolation, table ownership (`app_owner`), and `relrowsecurity` + `relforcerowsecurity` via `'public.rls_probe'::regclass`.
+   - Seeding moved to `beforeAll`, avoiding inter-test order dependency.
+   - Fixed NestJS DI `import type` issue in `app.controller.ts`, making `apps/api` test green.
+2. **Adverse Test (Inverted RLS Check)**:
+   - Disabled RLS via `psql` as `app_owner`: cases (a), (b), (c), (d), (e), and (g) failed as expected.
+   - Re-enabled and forced RLS: all 7 tests passed green.
+3. **Clean Slate Verification**:
+   - `docker compose down -v`, rebuild, `db:migrate`, `pnpm test`: all green from zero.
+4. **CI & Docs**:
+   - Documented CI role separation in `docs/database.md` and verified `.github/workflows/ci.yml`.
+   - Full workspace `lint`, `typecheck`, and `build` passing green.
+
 ---
 
 ## Decisions

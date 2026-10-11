@@ -8,6 +8,20 @@
       "when": 1791152704372,
       "tag": "0000_worried_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791722523770,
+      "tag": "0001_damp_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791726935912,
+      "tag": "0002_lowly_slayback",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,7 @@
     "typecheck": "pnpm --recursive typecheck",
     "test": "pnpm --recursive test",
     "db:generate": "pnpm --filter @repo/db db:generate",
+    "db:generate:custom": "pnpm --filter @repo/db db:generate:custom",
     "db:migrate": "pnpm --filter @repo/db db:migrate",
     "db:reset": "pnpm --filter @repo/db db:reset",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\" --ignore-path .gitignore"
