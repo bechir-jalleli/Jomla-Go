@@ -38,3 +38,6 @@ infra/volumes/
 
 # Misc
 *.tsbuildinfo
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.map

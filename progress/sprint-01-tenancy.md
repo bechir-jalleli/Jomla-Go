@@ -9,8 +9,8 @@
 
 | # | Task | Status |
 |---|---|---|
-| 1 | Local DB roles, extensions, migration tooling, baseline migration | In progress |
-| 2 | Tenants table, RLS, TenantDb context | Planned |
+| 1 | Local DB roles, extensions, migration tooling, baseline migration | Done |
+| 2 | Tenants table, TenantDb context, Tenant Resolver, Middleware | Done |
 
 ---
 
@@ -151,6 +151,19 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
    - Documented CI role separation in `docs/database.md` and verified `.github/workflows/ci.yml`.
    - Full workspace `lint`, `typecheck`, and `build` passing green.
 
+### Session 3 — 2026-10-11
+
+1. **Task 2 — Tenancy Core (Schema + API Layer)**:
+   - Created `tenants` and `tenant_domains` tables (migration 0003), with citext hostname uniqueness, slug uniqueness, FK cascade, and status/locale defaults.
+   - Added Zod schemas in `packages/contracts/src/tenancy/tenant.schema.ts` for `Tenant`, `TenantDomain`, and `TenantContext`.
+   - Implemented `TenantContext` (AsyncLocalStorage), `TenantDb` (transaction-local `app.tenant_id`), `PlatformDb`, `TenantResolverService` (host→tenant with LRU cache), and `TenantMiddleware` (fail-closed 404).
+   - Registered `DatabaseModule` (Global) and `TenancyModule` in `AppModule`.
+   - Fixed `noEmit` in `packages/db` and `packages/contracts` tsconfig to prevent emitted `.js` files polluting `src/`.
+   - Fixed `tsconfig.build.json` for `nest build` to support workspace package resolution.
+   - Fixed `apps/api` test script to load `.env` via `node --env-file`.
+2. **Tests**: 26 total tests passing (12 in `packages/db`, 14 in `apps/api` including 13 tenancy tests).
+3. **Full pipeline green**: `lint`, `typecheck`, `build`, `test` all passing.
+
 ---
 
 ## Decisions
@@ -167,16 +180,22 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
 
 | # | Item | Status |
 |---|---|---|
-| B1 | AppController test failure | Pre-existing; unrelated to this task |
+| B1 | AppController test failure | Fixed (eslint-disable for DI import) |
 | B2 | progress/_TEMPLATE-sprint.md does not exist | No template; sprint-01 created manually with agreed structure |
 | B3 | progress/sprint-00-foundations.md does not exist | Sprint-00 content file missing; row kept in progress/README.md |
+| B4 | `tsc` emits `.js`/`.d.ts` into `src/` in packages/db and packages/contracts | Fixed with `noEmit: true` in both tsconfig.json |
 
 ---
 
-## Carry-over
+## Carry-over & Deferred Tasks
 
-- Commit `chore(db): local roles, extensions, migration tooling and baseline migration` (not yet committed per instructions).
-- Task 2: Tenants table, RLS policies, TenantDb context.
+- **Production build (Sprint 11-12):** Resolve API production build (`nest build`) when monorepo packages export `.ts` source and API has `"type": "module"`.
+  - **Option 1 (Bundler: `tsup` / `esbuild`):** Bundle API with monorepo packages into single ESM bundle `dist/main.js`. Fast, clean, but requires devDependency.
+  - **Option 2 (Pre-build packages to dist):** Add `build` script to `@repo/contracts` and `@repo/db` outputting `.js` + `.d.ts` to `dist/`, consumed by standard `nest build`. Clean monorepo structure, but requires multi-package build step.
+  - **Option 3 (Runtime runner: `tsx` / `@swc/cli`):** Run in production using `tsx` or Nest SWC loader. Low config, but runs TS at runtime.
+  - *Decision pending founder confirmation.*
+- All Task 1 and Task 2 changes are ready for commit (user handles commits).
+- Next: Sprint 02 or Task 3 — Auth module (Admin login, sessions).
 
 ---
 

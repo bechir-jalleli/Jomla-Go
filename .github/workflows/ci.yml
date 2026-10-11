@@ -69,7 +69,9 @@ jobs:
         run: |
           echo "DATABASE_MIGRATOR_URL=postgresql://app_owner:ci_owner_password@localhost:5432/jomla_ci" >> .env
           echo "DATABASE_URL=postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci" >> .env
+          echo "DATABASE_PLATFORM_URL=postgresql://app_platform:ci_platform_password@localhost:5432/jomla_ci" >> .env
           echo "DATABASE_TEST_URL=postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci" >> .env
+          echo "TRUST_TENANT_HOST_HEADER=false" >> .env
 
       - name: Run database migrations (as app_owner)
         env:
@@ -79,6 +81,7 @@ jobs:
       - name: Run unit & integration tests
         env:
           DATABASE_TEST_URL: postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci
+          DATABASE_PLATFORM_URL: postgresql://app_platform:ci_platform_password@localhost:5432/jomla_ci
         run: pnpm test
 
       - name: Build

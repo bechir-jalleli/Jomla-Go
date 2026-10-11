@@ -14,4 +14,28 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    files: ['apps/api/src/**/*.ts'],
+    ignores: ['apps/api/src/infra/db/**', 'apps/api/src/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'pg',
+              message: 'Raw pg pool access is forbidden outside apps/api/src/infra/db/. Use TenantDb or PlatformDb.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/infra/db/platform-db*'],
+              importNames: ['PLATFORM_PG_POOL', 'RUNTIME_PG_POOL'],
+              message: 'Direct injection of PG pool tokens is forbidden outside infra/db.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

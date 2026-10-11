@@ -22,6 +22,27 @@
       "when": 1791726935912,
       "tag": "0002_lowly_slayback",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791738182900,
+      "tag": "0003_crazy_raza",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791742368251,
+      "tag": "0004_platform_privileges",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791742422596,
+      "tag": "0005_classy_the_call",
+      "breakpoints": true
     }
   ]
 }

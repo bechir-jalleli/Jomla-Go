@@ -9,11 +9,16 @@ This document defines the rules and operational procedures for database migratio
 | Role | Purpose | Env Variable | Notes |
 |---|---|---|---|
 | `app_owner` | Owns DB objects, runs migrations only | `DATABASE_MIGRATOR_URL` | Never used by application or tests |
-| `app_runtime` | API at runtime, integration tests | `DATABASE_URL` / `DATABASE_TEST_URL` | SELECT/INSERT/UPDATE/DELETE only, NOSUPERUSER, NOBYPASSRLS, not table owner |
-| `app_platform` | Platform-level operations (future) | *(reserved)* | Same DML grants as app_runtime |
+| `app_runtime` | API at runtime, integration tests | `DATABASE_URL` / `DATABASE_TEST_URL` | Tenant-scoped access only, NOSUPERUSER, NOBYPASSRLS, not table owner |
+| `app_platform` | Platform-level operations (tenancy, auth, jobs) | `DATABASE_PLATFORM_URL` | Direct access to platform tables only |
 | `postgres` | Superuser, container init only | *(not exported)* | **Never used by application code, tests, or migrations** |
 
 **Strict rule:** Any test or application code that connects as `postgres` or `app_owner` is a bug. Tests guard this with a `SELECT current_user` check at startup.
+
+### Platform Tables Isolation & In-Memory Cache
+- **Mandatory REVOKE on Platform Tables:** Default privileges grant `app_runtime` DML permissions on newly created tables. Every new platform table (e.g. `tenants`, `tenant_domains`) **must** have an explicit forward migration executing `REVOKE ALL ON TABLE <name> FROM app_runtime` and `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE <name> TO app_platform`.
+- **Tenant Status & Cache Invalidation:** The `TenantResolverService` caches positive resolutions in memory for 60 seconds (BP §17). Consequently, tenant suspensions or domain updates may take up to 60 seconds to take effect across the cluster until cache expires (a future enhancement will allow CLI cache purging via Pub/Sub or RPC).
+- **Reverse Proxy Header Security (`TRUST_TENANT_HOST_HEADER`):** Setting `TRUST_TENANT_HOST_HEADER=true` is secure **strictly and only if** the API container is not published or reachable outside the internal Docker network (i.e. only the Caddy reverse proxy can reach the API and Caddy unconditionally sanitizes and overwrites `X-Tenant-Host`). If the API port is exposed directly to clients or untrusted networks, `TRUST_TENANT_HOST_HEADER` must remain `false` to prevent host spoofing vulnerabilities.
 
 ---
 
