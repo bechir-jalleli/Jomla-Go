@@ -34,7 +34,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 12
+          version: 12.8.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -72,9 +72,13 @@ jobs:
           echo "DATABASE_TEST_URL=postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci" >> .env
 
       - name: Run database migrations (as app_owner)
+        env:
+          DATABASE_MIGRATOR_URL: postgresql://app_owner:ci_owner_password@localhost:5432/jomla_ci
         run: pnpm db:migrate
 
       - name: Run unit & integration tests
+        env:
+          DATABASE_TEST_URL: postgresql://app_runtime:ci_runtime_password@localhost:5432/jomla_ci
         run: pnpm test
 
       - name: Build
