@@ -82,3 +82,63 @@ The CI pipeline (`.github/workflows/ci.yml`) strictly enforces role separation:
    - `pnpm test` runs strictly using `DATABASE_TEST_URL` as `app_runtime`.
    - Tests verify that connection identity is `app_runtime` and assert tenant isolation under RLS.
 
+---
+
+## 8. Tenant-Owned Table RLS Template
+
+All tenant-scoped tables must follow this exact pattern in a custom migration following DDL creation:
+
+```sql
+-- 1. Explicit Privilege Revocation (Least Privilege)
+-- Default privileges grant DML to app_runtime; explicitly revoke unneeded permissions.
+REVOKE INSERT, DELETE, TRUNCATE ON TABLE "<table_name>" FROM app_runtime;
+REVOKE TRUNCATE ON TABLE "<table_name>" FROM app_platform;
+
+-- 2. Enable and Force Row Level Security
+ALTER TABLE "<table_name>" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "<table_name>" FORCE ROW LEVEL SECURITY;
+
+-- 3. app_runtime Policies (scoped to current_setting('app.tenant_id'))
+CREATE POLICY <table_name>_runtime_select ON "<table_name>"
+  FOR SELECT TO app_runtime
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+CREATE POLICY <table_name>_runtime_update ON "<table_name>"
+  FOR UPDATE TO app_runtime
+  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+-- 4. app_platform Policy (unrestricted access for CLI/jobs, no TRUNCATE)
+CREATE POLICY <table_name>_platform_all ON "<table_name>"
+  FOR ALL TO app_platform
+  USING (true)
+  WITH CHECK (true);
+```
+
+---
+
+## 9. New Tenant Table Checklist
+
+Before any new tenant-owned table is considered ready:
+
+1. **`tenant_id` Column:** `tenant_id NOT NULL`, matching the tenant's UUID format.
+2. **Foreign Key:** References `tenants(id) ON DELETE CASCADE` (or composite FK `(tenant_id, ...)` for child entities).
+3. **Primary Key / Uniqueness:** Either `tenant_id` as PK (for 1:1 tables like `company_settings`, `branding`) or composite unique constraint/PK `(tenant_id, id)` (for 1:N entities).
+4. **ENABLE + FORCE RLS:** Both `ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY` are applied (`pg_class.relrowsecurity=true` and `pg_class.relforcerowsecurity=true`).
+5. **Explicit Policies for Roles:**
+   - Dedicated `SELECT` and `UPDATE` policies for `app_runtime` using `tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid`.
+   - Explicit `FOR ALL` policy for `app_platform` using `USING (true) WITH CHECK (true)` so platform operations (CLI/seeders) can insert and manage records.
+6. **Explicit Privilege Revocations:** REVOKE any unneeded actions (e.g. `INSERT`, `DELETE`, `TRUNCATE`) from `app_runtime`. Never grant `TRUNCATE` to runtime or platform.
+7. **Indexes Starting with `tenant_id`:** Every index must have `tenant_id` as its leading column to support tenant-partitioned queries.
+8. **The Reverse Test:** Verify security tests fail when RLS is disabled or permissions are over-granted, then pass when restored.
+9. **CI RLS Scanner (Task 2.2):** Automated check to ensure no table without RLS slips through.
+
+---
+
+## 10. Platform Tables (No Runtime Access)
+
+| Table | Reason for Strict Isolation | Access Control |
+|---|---|---|
+| `tenants` | Contains all tenant records, status, subscription metadata. An attar or distributor must never read other tenant records or mutate tenancy metadata. | `REVOKE ALL FROM app_runtime`. `app_platform` only. |
+| `tenant_domains` | Contains platform hostnames, custom domains, and verification tokens. Exposing this could leak customer domains or allow host hijacking. | `REVOKE ALL FROM app_runtime`. `app_platform` only. |
+
