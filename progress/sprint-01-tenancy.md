@@ -161,8 +161,9 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
    - Fixed `noEmit` in `packages/db` and `packages/contracts` tsconfig to prevent emitted `.js` files polluting `src/`.
    - Fixed `tsconfig.build.json` for `nest build` to support workspace package resolution.
    - Fixed `apps/api` test script to load `.env` via `node --env-file`.
-2. **Tests**: 26 total tests passing (12 in `packages/db`, 14 in `apps/api` including 13 tenancy tests).
-3. **Full pipeline green**: `lint`, `typecheck`, `build`, `test` all passing.
+2. **Correction regarding commit `be3616e`**: The pipeline was previously claimed green at `be3616e`, but in reality the test "bypasses /api/health with query params" was failing because Fastify rewrote `req.url` to `/` under `forRoutes('*')` and the bypass condition never matched. Branch `fix/2.0-tenancy-health-bypass` fixes this by reading `req.originalUrl`.
+3. **Tests**: Real test totals after fix: 50 tests passing across workspaces (17 in `@repo/db` across 2 test files, 33 in `@repo/api` across 2 test files).
+4. **Full pipeline green**: `pnpm db:reset`, `pnpm db:migrate`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build` all passing.
 
 ---
 
@@ -173,6 +174,7 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
 | D-DB-1 | Port conflict on local 5432 | Compose exposes 5433:5432; documented in .env.example |
 | D-DB-2 | No TRUNCATE for any runtime role | app_runtime AND app_platform denied TRUNCATE |
 | D-DB-3 | Env loading without new dep | node --env-file=../../.env (Node built-in, works) |
+| D-DB-4 | Health bypass matching | Exact pathname on originalUrl, GET/HEAD only; consumer.exclude rejected after a spike showed it bypasses /api/health/, /API/health, POST and DELETE |
 
 ---
 
@@ -189,6 +191,7 @@ Privileges after reset: TRUNCATE denied for app_runtime and app_platform, INSERT
 
 ## Carry-over & Deferred Tasks
 
+- **Real GET /api/health liveness endpoint:** `@Public`, no DB access, built with the auth work; when it exists, the allowed-path tests must also assert its response.
 - **Production build (Sprint 11-12):** Resolve API production build (`nest build`) when monorepo packages export `.ts` source and API has `"type": "module"`.
   - **Option 1 (Bundler: `tsup` / `esbuild`):** Bundle API with monorepo packages into single ESM bundle `dist/main.js`. Fast, clean, but requires devDependency.
   - **Option 2 (Pre-build packages to dist):** Add `build` script to `@repo/contracts` and `@repo/db` outputting `.js` + `.d.ts` to `dist/`, consumed by standard `nest build`. Clean monorepo structure, but requires multi-package build step.
