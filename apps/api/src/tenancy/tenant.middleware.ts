@@ -1,23 +1,40 @@
 import { Injectable, type NestMiddleware, NotFoundException } from '@nestjs/common';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { TenantResolverService } from './tenant-resolver.service.js';
 import { runWithTenantContext } from './tenant-context.js';
+
+/**
+ * Narrow request shape for the middleware — avoids `any` while staying
+ * framework-agnostic. Fastify's @fastify/middie sets `originalUrl` to the
+ * unmodified request URL; `url` is rewritten after route matching (always
+ * `/` for `forRoutes('*')`).
+ */
+interface RawRequest {
+  url?: string;
+  originalUrl?: string;
+  method?: string;
+  headers: Record<string, string | string[] | undefined>;
+}
+
+const HEALTH_PATHS: ReadonlySet<string> = new Set(['/api/health', '/health']);
+const BYPASS_METHODS: ReadonlySet<string> = new Set(['GET', 'HEAD']);
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   constructor(private readonly tenantResolver: TenantResolverService) {}
 
   async use(
-    req: IncomingMessage,
-    res: ServerResponse,
+    req: RawRequest,
+    _res: unknown,
     next: (err?: Error) => void,
   ): Promise<void> {
-    const rawUrl = req.url ?? '';
+    // originalUrl preserves the full path; url is rewritten by Fastify.
+    const rawUrl = req.originalUrl ?? req.url ?? '';
     const pathname = rawUrl.split('?')[0] ?? '';
+    const method = (req.method ?? '').toUpperCase();
 
-    // Bypass health check endpoints (strictly platform-level health probes)
-    if (pathname === '/api/health' || pathname === '/health') {
+    // Bypass health probes — exact pathname, GET/HEAD only, no normalization.
+    if (BYPASS_METHODS.has(method) && HEALTH_PATHS.has(pathname)) {
       return next();
     }
 
@@ -50,4 +67,3 @@ export class TenantMiddleware implements NestMiddleware {
     }
   }
 }
-

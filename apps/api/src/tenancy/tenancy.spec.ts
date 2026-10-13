@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import pg from 'pg';
 import crypto from 'node:crypto';
 import { Controller, Get } from '@nestjs/common';
@@ -14,6 +14,7 @@ import { TenantResolverService } from './tenant-resolver.service.js';
 import { PlatformDb, PLATFORM_PG_POOL, RUNTIME_PG_POOL } from '../infra/db/platform-db.js';
 import { TenantDb } from '../infra/db/tenant-db.js';
 import { TenancyModule } from './tenancy.module.js';
+import { TenantMiddleware } from './tenant.middleware.js';
 import { rlsProbe } from '@repo/db';
 
 const { Pool } = pg;
@@ -133,6 +134,7 @@ describe('Tenancy Core: Context, Resolver, Middleware, TenantDb & HTTP Integrati
       .compile();
 
     app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    tenantResolver = moduleFixture.get(TenantResolverService);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -380,16 +382,193 @@ describe('Tenancy Core: Context, Resolver, Middleware, TenantDb & HTTP Integrati
       }
     });
 
-    it('bypasses /api/health with query params (?x=1) without requiring tenant host', async () => {
+    // --- Health bypass: allowed paths (resolver must NOT be called) ---
+    // NOTE: Once a real health controller exists (@Public, no DB), these
+    // tests must also assert the controller's response (200 / {ok:true}).
+
+    describe('health bypass — allowed paths', () => {
+      it('bypasses GET /api/health', async () => {
+        const spy = vi.spyOn(tenantResolver, 'resolveByHost');
+        const res = await app.inject({ method: 'GET', url: '/api/health' });
+        expect(spy).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toContain('Cannot GET /api/health');
+        spy.mockRestore();
+      });
+
+      it('bypasses GET /api/health?x=1', async () => {
+        const spy = vi.spyOn(tenantResolver, 'resolveByHost');
+        const res = await app.inject({ method: 'GET', url: '/api/health?x=1' });
+        expect(spy).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(404);
+        spy.mockRestore();
+      });
+
+      it('bypasses GET /health', async () => {
+        const spy = vi.spyOn(tenantResolver, 'resolveByHost');
+        const res = await app.inject({ method: 'GET', url: '/health' });
+        expect(spy).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(404);
+        spy.mockRestore();
+      });
+
+      it('bypasses GET /health?probe=1', async () => {
+        const spy = vi.spyOn(tenantResolver, 'resolveByHost');
+        const res = await app.inject({ method: 'GET', url: '/health?probe=1' });
+        expect(spy).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(404);
+        spy.mockRestore();
+      });
+
+      it('bypasses HEAD /api/health', async () => {
+        const spy = vi.spyOn(tenantResolver, 'resolveByHost');
+        const res = await app.inject({ method: 'HEAD', url: '/api/health' });
+        expect(spy).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(404);
+        spy.mockRestore();
+      });
+    });
+
+    // --- Health bypass: deny cases (resolver IS called, tenant-not-found) ---
+
+    describe('health bypass — deny cases', () => {
+      it('does NOT bypass /API/health (case differs)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/API/health',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/%68ealth (percent-encoded)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/%68ealth',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/health;x=1 (path param injection)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/health;x=1',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/health/../products (path traversal)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/health/../products',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/health/..%2Fproducts (encoded traversal)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/health/..%2Fproducts',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass POST /api/health (wrong method)', async () => {
+        const res = await app.inject({
+          method: 'POST', url: '/api/health',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass DELETE /api/health (wrong method)', async () => {
+        const res = await app.inject({
+          method: 'DELETE', url: '/api/health',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/health/ (trailing slash)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/health/',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass //api/health (double slash)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '//api/health',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/health-check (different path)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/health-check',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/healthz (different path)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/healthz',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+
+      it('does NOT bypass /api/healthx?x=/api/health (path smuggling)', async () => {
+        const res = await app.inject({
+          method: 'GET', url: '/api/healthx?x=/api/health',
+          headers: { host: 'unknown-host.example.com' },
+        });
+        expect(res.statusCode).toBe(404);
+        expect(JSON.parse(res.body).message).toBe('Tenant not found or inactive');
+      });
+    });
+
+    // --- Fail-closed: no originalUrl on the request ---
+
+    it('does not bypass when req has no originalUrl (fail-closed)', async () => {
+      const middleware = app.get(TenantMiddleware);
+      const fakeReq = {
+        url: '/',
+        method: 'GET',
+        headers: { host: 'unknown-host.example.com' } as Record<string, string | string[] | undefined>,
+      };
+      const fakeNext = vi.fn();
+
+      await expect(
+        middleware.use(fakeReq, {}, fakeNext),
+      ).rejects.toThrow('Tenant not found or inactive');
+      expect(fakeNext).not.toHaveBeenCalled();
+    });
+
+    // --- Normal tenant request through a health sub-path ---
+
+    it('treats /api/health/fake with valid tenant host as normal tenant request', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/health?x=1',
+        url: '/api/health/fake',
+        headers: { host: tenantAHost },
       });
-      // The middleware passes through to Next without throwing Tenant NotFoundException.
-      // 404 from Nest router is normal since health route isn't defined on this test controller,
-      // but verify it wasn't intercepted by TenantMiddleware with 'Missing host header'.
+      // Middleware ran (valid host resolved), router can't find the route → 404 from router
       expect(res.statusCode).toBe(404);
-      expect(JSON.parse(res.body).message).toContain('Cannot GET /api/health?x=1');
+      expect(JSON.parse(res.body).message).toContain('Cannot GET /api/health/fake');
     });
   });
 });
