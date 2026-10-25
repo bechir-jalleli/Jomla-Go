@@ -1,7 +1,7 @@
    # Sprint 02: Tenancy Completion
 
-   **Status:** Active
-   **Dates:** 2026-10-19 → 2026-11-01 (started early on 2026-10-11)
+   **Status:** Closed (Completed)
+   **Dates:** 2026-10-19 → 2026-11-01 (started early on 2026-10-11, completed on 2026-10-25)
    **Goal:** Two test tenants with proven isolation. Every tenant table has RLS, enforced by a CI scanner.
    **Gate:** isolation tests green on GitHub CI AND the scanner fails on a deliberate violation.
 
