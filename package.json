@@ -18,6 +18,7 @@
     "db:generate:custom": "pnpm --filter @repo/db db:generate:custom",
     "db:migrate": "pnpm --filter @repo/db db:migrate",
     "db:reset": "pnpm --filter @repo/db db:reset",
+    "platform:cli": "pnpm --filter @repo/db platform:cli",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\" --ignore-path .gitignore"
   },
   "devDependencies": {

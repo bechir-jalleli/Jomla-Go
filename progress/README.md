@@ -1,15 +1,16 @@
 # Progress Dashboard
 
 ## 1. Current status
-- **Active sprint:** [Sprint 00: Foundations](sprint-00-foundations.md)
-- **Current focus:** Setup tenancy and DB core in Sprint 01.
-- **Next step:** Run migrations and verify DB roles.
+- **Active sprint:** [Sprint 02: Tenancy Completion](sprint-02-tenancy.md)
+- **Current focus:** Platform CLI & Tenancy Completion.
+- **Next step:** Merge feat/2.3-isolation-tests to main, then start Sprint 03 (Auth + Users).
 
 ## 2. Sprint index
 | Sprint | Goal | Dates | Status | Tasks done / total | Link |
 |---|---|---|---|---|---|
-| Sprint 00 | Foundations | TBD | Active | 0/0 | [sprint-00-foundations.md](sprint-00-foundations.md) |
-| Sprint 01 | Tenancy + DB core | TBD | Planned | 0/2 | [sprint-01-tenancy.md](sprint-01-tenancy.md) |
+| Sprint 00 | Foundations | 2026-10-03 | Done | Completed | [sprint-00-foundations.md](sprint-00-foundations.md) |
+| Sprint 01 | Tenancy + DB core | 2026-10-11 | Done | Completed | [sprint-01-tenancy.md](sprint-01-tenancy.md) |
+| Sprint 02 | Tenancy Completion | 2026-10-19 → 2026-11-01 | Done | 5/5 | [sprint-02-tenancy.md](sprint-02-tenancy.md) |
 
 ## 3. Planned phases
 0. Foundations

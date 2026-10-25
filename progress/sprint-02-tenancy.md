@@ -15,7 +15,7 @@
    | 1.7 | RLS migration template applied to both tables | 4 | Done |
    | 1.8 | RLS Scanner in CI (fails if a `tenant_id` table has no RLS) | 3 | Done |
    | 1.9 | Isolation tests on the real tables | 4 | Done |
-   | 1.10 | Platform CLI: create tenant + domain + settings, suspend tenant | 3 | Not started |
+   | 1.10 | Platform CLI: create tenant + domain + settings, suspend tenant | 3 | Done |
 
    Already done in Sprint 01 (Session 3): 1.4 resolver + cache, 1.5 TenantContext, 1.6 TenantDb, tables `tenants` and `tenant_domains`.
 
@@ -121,6 +121,30 @@
       - `pnpm lint`: green across all packages (0 errors).
       - `pnpm typecheck`: green across all packages (0 errors).
       - `pnpm build`: Next.js web build + NestJS api build passed cleanly.
+
+   ---
+
+   ### Session 4 — 2026-10-25: Task 1.10 Platform CLI & CI Fix
+
+   1. **CI Next.js Types Fix**:
+      - Next.js 16.3 generates typed routes and `LayoutProps` via `next typegen`.
+      - Added `pnpm --filter @repo/web exec next typegen` step to `.github/workflows/ci.yml` before `typecheck`.
+   2. **Platform CLI Implementation**:
+      - Created `PlatformTenantManager` in `@repo/db` using `app_platform` role (`DATABASE_PLATFORM_URL`).
+      - Operations:
+        - `createTenant`: atomic provisioning in 1 transaction (`tenants`, primary verified `tenant_domains`, default `company_settings`, default `branding`).
+        - `addDomain`: provisions custom or platform domains, handles primary domain election.
+        - `suspendTenant` / `activateTenant`: mutates tenant status by UUID or slug.
+      - Created executable CLI tool `packages/db/scripts/platform-cli.js` with root alias `pnpm platform:cli`.
+      - Created ESM resolver hook `packages/db/scripts/resolve-esm.js` and `register-hooks.js` using Node's native module customization.
+   3. **Security & Least-Privilege Verification**:
+      - Platform CLI verifies connection user is strictly `app_platform`.
+      - Reverse test in `platform-cli.spec.ts`: attempted execution via `app_runtime` is rejected with PostgreSQL error 42501.
+   4. **Test & Pipeline Run**:
+      - `pnpm test`: 68/68 tests passing (28 DB tests including 4 new platform-cli tests, 40 API tests).
+      - `pnpm lint`: clean across all packages.
+      - `pnpm typecheck`: clean across all packages.
+      - `pnpm build`: Next.js production build + NestJS API build clean.
 
    ---
 
