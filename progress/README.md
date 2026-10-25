@@ -1,9 +1,9 @@
 # Progress Dashboard
 
 ## 1. Current status
-- **Active sprint:** [Sprint 02: Tenancy Completion](sprint-02-tenancy.md)
-- **Current focus:** Platform CLI & Tenancy Completion.
-- **Next step:** Merge feat/2.3-isolation-tests to main, then start Sprint 03 (Auth + Users).
+- **Active sprint:** [Sprint 03: Auth + Users](sprint-03-auth.md)
+- **Current focus:** Setup `users`, `sessions`, and Argon2id session auth.
+- **Next step:** Task 3.1 DB Schema & RLS for users and sessions.
 
 ## 2. Sprint index
 | Sprint | Goal | Dates | Status | Tasks done / total | Link |
@@ -11,6 +11,7 @@
 | Sprint 00 | Foundations | 2026-10-03 | Done | Completed | [sprint-00-foundations.md](sprint-00-foundations.md) |
 | Sprint 01 | Tenancy + DB core | 2026-10-11 | Done | Completed | [sprint-01-tenancy.md](sprint-01-tenancy.md) |
 | Sprint 02 | Tenancy Completion | 2026-10-19 → 2026-11-01 | Done | 5/5 | [sprint-02-tenancy.md](sprint-02-tenancy.md) |
+| Sprint 03 | Auth + Users (Admin & Attar) | 2026-10-26 → 2026-11-08 | Planned | 0/7 | [sprint-03-auth.md](sprint-03-auth.md) |
 
 ## 3. Planned phases
 0. Foundations
