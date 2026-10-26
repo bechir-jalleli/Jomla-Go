@@ -169,3 +169,13 @@ The Platform CLI (`pnpm platform:cli` or `node scripts/platform-cli.js`) runs wi
   pnpm platform:cli activate-tenant <slug_or_id>
   ```
 
+---
+
+## 12. Authentication Tables & RLS (Sprint 03)
+
+| Table | Ownership | RLS Model | Access Constraints |
+|---|---|---|---|
+| `users` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE INSERT, DELETE, TRUNCATE FROM app_runtime`. `SELECT` & `UPDATE` scoped to `current_setting('app.tenant_id')`. One admin per tenant enforced via partial unique index `(tenant_id) WHERE role = 'admin'`. Composite unique `(tenant_id, id)`. |
+| `sessions` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE TRUNCATE`. Full CRUD for `app_runtime` scoped to `current_setting('app.tenant_id')`. Unique SHA-256 `token_hash`. Supports `admin` and `attar` realms. Composite FK to `users(tenant_id, id)`. |
+| `auth_tokens` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE TRUNCATE`. Full CRUD for `app_runtime` scoped to `current_setting('app.tenant_id')`. Single-use short-lived tokens for password resets. Composite FK to `users(tenant_id, id)`. |
+

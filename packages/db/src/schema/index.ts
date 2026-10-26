@@ -16,3 +16,14 @@ export {
   type DbBranding,
   type DbNewBranding,
 } from './company-settings.js';
+export {
+  users,
+  sessions,
+  authTokens,
+  type DbUser,
+  type DbNewUser,
+  type DbSession,
+  type DbNewSession,
+  type DbAuthToken,
+  type DbNewAuthToken,
+} from './auth.js';
