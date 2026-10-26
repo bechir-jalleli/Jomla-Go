@@ -57,6 +57,20 @@
       "when": 1791753103303,
       "tag": "0007_company_settings_branding_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792929575440,
+      "tag": "0008_zippy_white_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792929586277,
+      "tag": "0009_auth_users_sessions_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -142,3 +142,40 @@ Before any new tenant-owned table is considered ready:
 | `tenants` | Contains all tenant records, status, subscription metadata. An attar or distributor must never read other tenant records or mutate tenancy metadata. | `REVOKE ALL FROM app_runtime`. `app_platform` only. |
 | `tenant_domains` | Contains platform hostnames, custom domains, and verification tokens. Exposing this could leak customer domains or allow host hijacking. | `REVOKE ALL FROM app_runtime`. `app_platform` only. |
 
+---
+
+## 11. Platform CLI (Tenant Lifecycle)
+
+The Platform CLI (`pnpm platform:cli` or `node scripts/platform-cli.js`) runs with `app_platform` credentials (`DATABASE_PLATFORM_URL`). It bypasses RLS safely and performs atomic provisioning of tenants and their 1:1 settings:
+
+- **Create Tenant:**
+  ```bash
+  pnpm platform:cli create-tenant --slug <slug> --name <name> --domain <domain> [--phone <phone>] [--whatsapp <wa>] [--min-order <millimes>] [--store-name <name>] [--color <hex>]
+  ```
+  Atomically provisions `tenants`, primary verified platform `tenant_domains`, default `company_settings`, and default `branding` in a single transaction.
+
+- **Add Domain:**
+  ```bash
+  pnpm platform:cli add-domain --tenant <slug_or_id> --domain <domain> [--primary]
+  ```
+
+- **Suspend Tenant:**
+  ```bash
+  pnpm platform:cli suspend-tenant <slug_or_id>
+  ```
+
+- **Activate Tenant:**
+  ```bash
+  pnpm platform:cli activate-tenant <slug_or_id>
+  ```
+
+---
+
+## 12. Authentication Tables & RLS (Sprint 03)
+
+| Table | Ownership | RLS Model | Access Constraints |
+|---|---|---|---|
+| `users` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE INSERT, DELETE, TRUNCATE FROM app_runtime`. `SELECT` & `UPDATE` scoped to `current_setting('app.tenant_id')`. One admin per tenant enforced via partial unique index `(tenant_id) WHERE role = 'admin'`. Composite unique `(tenant_id, id)`. |
+| `sessions` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE TRUNCATE`. Full CRUD for `app_runtime` scoped to `current_setting('app.tenant_id')`. Unique SHA-256 `token_hash`. Supports `admin` and `attar` realms. Composite FK to `users(tenant_id, id)`. |
+| `auth_tokens` | Tenant-owned | ENABLE + FORCE RLS | `REVOKE TRUNCATE`. Full CRUD for `app_runtime` scoped to `current_setting('app.tenant_id')`. Single-use short-lived tokens for password resets. Composite FK to `users(tenant_id, id)`. |
+
